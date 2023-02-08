@@ -42,13 +42,13 @@ func (es *EventService) Insert(origin, event_type, body, owner string) error {
 func (es *EventService) Find() ([]*tevents.Event, error) {
 	var events []*tevents.Event
 
-	rows, err := es.db.Query(`SELECT origin, event_type, body, owner  FROM events ORDER BY created_at DESC`)
+	rows, err := es.db.Query(`SELECT origin, event_type, body, owner, created_at  FROM events ORDER BY created_at DESC`)
 	if err != nil {
 		return nil, err
 	}
 	for rows.Next() {
 		var e tevents.Event
-		err := rows.Scan(&e.Origin, &e.EventType, &e.Body, &e.Owner)
+		err := rows.Scan(&e.Origin, &e.EventType, &e.Body, &e.Owner, &e.CreatedAt)
 		if err != nil {
 			return nil, err
 		}

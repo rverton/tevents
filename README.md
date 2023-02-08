@@ -45,3 +45,15 @@ curl http://tevents/log?origin=networkwatcher -d "new device found connected to 
 # example for monitoring a cron job executed every morning
 0 1 * * * /usr/local/bin/backup.sh && curl http://tevents/monitor?origin=cron:backup -d "executed";
 ```
+
+## Development
+
+All relevant tasks can be done via `make`:
+
+```
+make watch              # restart web server on code changes
+make tailwind-watch     # watch tailwind css changes
+make tailwind           # only build tailwind resources
+make run                # run web server
+make                    # build executable with all assets embedded
+```

@@ -1,28 +1,41 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="/assets/output.css" rel="stylesheet">
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="/assets/output.css" rel="stylesheet" />
+  </head>
+  <body class="bg-gray-100">
+    <div class="bg-white rounded shadow m-5 px-4 py-2">
+      <nav class="border-b flex justify-between py-2 items-center">
+        <div class="items-center flex">
+          <h1 class="font-bold">tevents</h1>
+          <div class="flex space-x-3 ml-6">
+            <a href="/" class="bg-gray-300 p-1 rounded">events</a>
+            <a href="/" class="p-1 rounded">monitoring</a>
+          </div>
+        </div>
 
-    <div className="">
-        <nav>
-          <h1 class="font-bold">
-              tevents
-          </h1>
-        </nav>
+        <a
+          href="#"
+          class="inline-flex items-center rounded-md border border-transparent bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2"
+          >Clear</a
+        >
+      </nav>
 
-      <div>
+      <div class="flex flex-col mt-1 font-mono text-sm">
         {{ range . }}
-        <div>
-            <div>{{.Origin}}</div>
-            <div>{{.Owner}}</div>
+        <div class="flex px-2 space-x-5 border-b border-gray-100 py-1">
+          <div class="flex items-center text-gray-400 font-light">
+            {{formatTime .CreatedAt}}
+          </div>
+
+          <div class="text-gray-500">{{.Origin}}:{{.Owner}}</div>
+
+          <div class="text-gray-600">{{.Body}}</div>
         </div>
         {{ end }}
       </div>
     </div>
-
-</body>
+  </body>
 </html>

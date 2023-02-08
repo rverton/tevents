@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 )
 
 type Server struct {
@@ -24,7 +25,18 @@ var assetsFS embed.FS
 var indexTmpl *template.Template
 
 func init() {
-	indexTmpl = template.Must(template.ParseFS(assetsFS, "assets/index.html"))
+	var err error
+
+	indexTmpl, err =
+		template.New("index.html").Funcs(template.FuncMap{
+			"formatTime": func(t time.Time) string {
+				return t.String()[:19]
+			},
+		}).ParseFS(assetsFS, "assets/index.html")
+
+	if err != nil {
+		panic(err)
+	}
 }
 
 func NewServer(addr string, db *sql.DB) *Server {
