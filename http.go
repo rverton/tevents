@@ -2,6 +2,7 @@ package tevents
 
 import (
 	"database/sql"
+	"embed"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -17,10 +18,16 @@ type Server struct {
 	EventService EventService
 }
 
+//go:embed assets/*
+var assetsFS embed.FS
+
 var indexTmpl *template.Template
 
-func NewServer(addr string, db *sql.DB) *Server {
+func init() {
+	indexTmpl = template.Must(template.ParseFS(assetsFS, "assets/index.html"))
+}
 
+func NewServer(addr string, db *sql.DB) *Server {
 	return &Server{
 		server: &http.Server{
 			Addr: addr,
@@ -36,15 +43,13 @@ func (s *Server) routes() *http.ServeMux {
 	mux.HandleFunc("/log", s.handleLog)
 	mux.HandleFunc("/monitor", s.handleMonitor)
 
+	mux.Handle("/assets/", http.FileServer(http.FS(assetsFS)))
+
 	return mux
 }
 
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	events, err := s.EventService.Find()
-	for _, event := range events {
-		fmt.Println(event)
-	}
-
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -87,12 +92,6 @@ func (s *Server) handleMonitor(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) Start() error {
-	var err error
-
-	indexTmpl, err = template.ParseFiles("./assets/index.html")
-	if err != nil {
-		log.Fatal("cant parse template")
-	}
 
 	s.server.Handler = s.routes()
 
