@@ -4,17 +4,23 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
+	"html"
 	"html/template"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"time"
+
+	"tailscale.com/client/tailscale"
 )
 
 type Server struct {
-	addr   string
-	server *http.Server
-	db     *sql.DB
+	addr     string
+	server   *http.Server
+	db       *sql.DB
+	listener net.Listener
+	tsClient *tailscale.LocalClient
 
 	EventService EventService
 }
@@ -47,12 +53,14 @@ func init() {
 	indexMonitorTmpl = template.Must(template.New("monitors").Funcs(funcMap).ParseFS(assetsFS, "assets/layout.html", "assets/monitors.html"))
 }
 
-func NewServer(addr string, db *sql.DB) *Server {
+func NewServer(addr string, db *sql.DB, ln net.Listener, lc *tailscale.LocalClient) *Server {
 	return &Server{
 		server: &http.Server{
 			Addr: addr,
 		},
-		db: db,
+		db:       db,
+		listener: ln,
+		tsClient: lc,
 	}
 }
 
@@ -145,6 +153,13 @@ func (s *Server) handleLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	who, err := s.tsClient.WhoIs(r.Context(), r.RemoteAddr)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	owner := html.EscapeString(who.Node.ComputedName)
+
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -153,7 +168,6 @@ func (s *Server) handleLog(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	origin := r.URL.Query().Get("origin")
-	owner := "ts-owner"
 
 	if err := s.EventService.Insert(origin, "event", string(body), owner); err != nil {
 		http.Error(w, fmt.Sprintf("sqlite error: %v", err), http.StatusInternalServerError)
@@ -168,7 +182,12 @@ func (s *Server) handleMonitor(w http.ResponseWriter, r *http.Request) {
 	}
 
 	origin := r.URL.Query().Get("origin")
-	owner := "ts-owner"
+	who, err := s.tsClient.WhoIs(r.Context(), r.RemoteAddr)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	owner := html.EscapeString(who.Node.ComputedName)
 
 	if err := s.EventService.Insert(origin, "monitor", "", owner); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -181,5 +200,5 @@ func (s *Server) Start() error {
 	s.server.Handler = s.routes()
 
 	log.Println("Starting server on", s.server.Addr)
-	return s.server.ListenAndServe()
+	return s.server.Serve(s.listener)
 }

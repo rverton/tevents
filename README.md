@@ -60,3 +60,11 @@ make run                # run web server
 make test               # run all tests
 make                    # build executable with all assets embedded
 ```
+
+### ToDo
+
+- [ ] Add tests for event/monitor hook handler
+- [ ] Make hour interval configurable
+- [ ] Filter, search and pagination
+- [ ] Allow to remove monitors (and all corresponding events)
+- [ ] Clear functionality

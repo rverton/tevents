@@ -9,10 +9,12 @@ import (
 	tdb "tevents/db"
 
 	_ "modernc.org/sqlite"
+	"tailscale.com/tsnet"
 )
 
 var (
-	dburl = flag.String("dburl", "db.sqlite", "database url")
+	dburl    = flag.String("dburl", "db.sqlite", "database url")
+	hostname = flag.String("hostname", "tevents", "hostname for the tailnet")
 )
 
 func main() {
@@ -27,7 +29,25 @@ func main() {
 		log.Fatal("cant setup schema", err)
 	}
 
-	s := tevents.NewServer(":8080", db)
+	ts := &tsnet.Server{
+		Hostname: *hostname,
+	}
+
+	defer ts.Close()
+
+	ln, err := ts.Listen("tcp", ":80")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer ln.Close()
+
+	lc, err := ts.LocalClient()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	s := tevents.NewServer(":8080", db, ln, lc)
 	s.EventService = tdb.NewEventService(db)
 
 	if err := s.Start(); err != nil {
