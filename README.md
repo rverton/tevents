@@ -4,8 +4,8 @@ tevents is a small tool to be deployed in your [tailnet](https://tailscale.com/k
 By using [tsnet](https://tailscale.com/blog/tsnet-virtual-private-services/), it can be deployed as a virtual private service. This allows to centrally collect
 events in your network and display them on a web interface.
 
-[]!(./screenshots/events.png)
-[]!(./screenshots/monitors.png)
+![](./screenshots/events.png)
+![](./screenshots/monitors.png)
 
 ## Events
 An event holds the following fields:
