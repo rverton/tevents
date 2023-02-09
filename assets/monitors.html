@@ -1,0 +1,18 @@
+{{ define "main" }}
+<div class="flex flex-col mt-1 font-mono text-sm">
+    {{ range $key, $value := .EventGroups }}
+      <div
+        class="flex flex-col sm:flex-row px-2 space-x-0 sm:space-x-5 border-b border-gray-100 py-1"
+      >
+        <div class="text-gray-500">{{ $key }}</div>
+      </div>
+    {{ end }}
+  </div>
+</div>
+
+<div class="flex justify-center">
+  <span class="text-gray-500 text-xs font-mono border p-1">
+    curl -X POST http://tevents/.monitor?origin=cron:example</span
+  >
+</div>
+{{ end }}

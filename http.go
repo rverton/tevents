@@ -22,21 +22,20 @@ type Server struct {
 //go:embed assets/*
 var assetsFS embed.FS
 
-var indexTmpl *template.Template
+var (
+	indexTmpl        *template.Template
+	indexMonitorTmpl *template.Template
+)
 
 func init() {
-	var err error
-
-	indexTmpl, err =
-		template.New("index.html").Funcs(template.FuncMap{
-			"formatTime": func(t time.Time) string {
-				return t.String()[:19]
-			},
-		}).ParseFS(assetsFS, "assets/index.html")
-
-	if err != nil {
-		panic(err)
+	funcMap := template.FuncMap{
+		"formatTime": func(t time.Time) string {
+			return t.String()[:19]
+		},
 	}
+
+	indexTmpl = template.Must(template.New("events").Funcs(funcMap).ParseFS(assetsFS, "assets/layout.html", "assets/events.html"))
+	indexMonitorTmpl = template.Must(template.New("monitors").Funcs(funcMap).ParseFS(assetsFS, "assets/layout.html", "assets/monitors.html"))
 }
 
 func NewServer(addr string, db *sql.DB) *Server {
@@ -51,26 +50,61 @@ func NewServer(addr string, db *sql.DB) *Server {
 func (s *Server) routes() *http.ServeMux {
 	mux := http.NewServeMux()
 
+	// display
 	mux.HandleFunc("/", s.handleIndex)
-	mux.HandleFunc("/log", s.handleLog)
-	mux.HandleFunc("/monitor", s.handleMonitor)
+	mux.HandleFunc("/monitor", s.handleIndexMonitor)
+
+	// collect
+	mux.HandleFunc("/.log", s.handleLog)
+	mux.HandleFunc("/.monitor", s.handleMonitor)
 
 	mux.Handle("/assets/", http.FileServer(http.FS(assetsFS)))
 
 	return mux
 }
 
+type TplData struct {
+	Events      []*Event
+	EventGroups map[string][]*Event
+	Monitor     bool
+}
+
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
-	events, err := s.EventService.Find()
+	events, err := s.EventService.Find("event")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	indexTmpl.Execute(w, events)
+	indexTmpl.ExecuteTemplate(w, "layout", TplData{Events: events, Monitor: false})
+}
+
+func (s *Server) handleIndexMonitor(w http.ResponseWriter, r *http.Request) {
+	events, err := s.EventService.Find("monitor")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// group entries by origin to show monitor hooks over time
+	groups := make(map[string][]*Event)
+	for _, e := range events {
+		identifier := fmt.Sprintf("%s:%s", e.Origin, e.Owner)
+		groups[identifier] = append(groups[identifier], e)
+	}
+
+	indexMonitorTmpl.ExecuteTemplate(w, "layout", TplData{
+		EventGroups: groups,
+		Monitor:     true,
+	})
 }
 
 func (s *Server) handleLog(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -81,23 +115,22 @@ func (s *Server) handleLog(w http.ResponseWriter, r *http.Request) {
 	origin := r.URL.Query().Get("origin")
 	owner := "ts-owner"
 
-	if err := s.EventService.Insert(origin, "log", string(body), owner); err != nil {
+	if err := s.EventService.Insert(origin, "event", string(body), owner); err != nil {
 		http.Error(w, fmt.Sprintf("sqlite error: %v", err), http.StatusInternalServerError)
 		return
 	}
 }
 
 func (s *Server) handleMonitor(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	origin := r.PostForm.Get("origin")
-	body := r.PostForm.Get("body")
-	owner := r.PostForm.Get("owner")
+	origin := r.URL.Query().Get("origin")
+	owner := "ts-owner"
 
-	if err := s.EventService.Insert(origin, "log", body, owner); err != nil {
+	if err := s.EventService.Insert(origin, "monitor", "", owner); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

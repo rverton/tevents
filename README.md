@@ -40,10 +40,10 @@ Events can be submitted via HTTP.
 
 ```
 # example for log event
-curl http://tevents/log?origin=networkwatcher -d "new device found connected to network"
+curl http://tevents/.log?origin=networkwatcher -d "new device found connected to network"
 
 # example for monitoring a cron job executed every morning
-0 1 * * * /usr/local/bin/backup.sh && curl http://tevents/monitor?origin=cron:backup -d "executed";
+0 1 * * * /usr/local/bin/backup.sh && curl http://tevents/.monitor?origin=cron:backup -d "executed";
 ```
 
 ## Development

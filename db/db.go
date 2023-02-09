@@ -39,10 +39,12 @@ func (es *EventService) Insert(origin, event_type, body, owner string) error {
 	return err
 }
 
-func (es *EventService) Find() ([]*tevents.Event, error) {
+func (es *EventService) Find(event_type string) ([]*tevents.Event, error) {
 	var events []*tevents.Event
 
-	rows, err := es.db.Query(`SELECT origin, event_type, body, owner, created_at  FROM events ORDER BY created_at DESC`)
+	sql := `SELECT origin, event_type, body, owner, created_at FROM events WHERE event_type = ? ORDER BY created_at DESC`
+
+	rows, err := es.db.Query(sql, event_type)
 	if err != nil {
 		return nil, err
 	}

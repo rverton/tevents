@@ -1,0 +1,25 @@
+{{ define "main" }}
+      <div class="flex flex-col mt-1 font-mono text-sm">
+        {{ range .Events }}
+          <div
+            class="flex flex-col sm:flex-row px-2 space-x-0 sm:space-x-5 border-b border-gray-100 py-1"
+          >
+            <div class="flex items-center text-gray-400 font-light">
+              {{ formatTime .CreatedAt }}
+            </div>
+
+            <div class="text-gray-500">{{ .Origin }}:{{ .Owner }}</div>
+
+            <div class="text-gray-600">{{ .Body }}</div>
+          </div>
+        {{ end }}
+      </div>
+    </div>
+
+    <div class="flex justify-center">
+      <span class="text-gray-500 text-xs font-mono border p-1">
+        curl http://tevents/.log?origin=networkwatcher -d &quot;example
+        event&quot;</span
+      >
+    </div>
+{{ end }}
