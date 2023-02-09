@@ -15,7 +15,7 @@ git clone github.com/rverton/tevents
 cd tevents && make
 export TS_AUTHKEY=tskey-auth-xyu # can be retrieved via admin panel
 go build -o tevents ./cmd/tevents
-./tevents
+./tevents # all assets are embedded in this binary
 ```
 
 ## Events
