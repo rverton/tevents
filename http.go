@@ -19,8 +19,17 @@ type Server struct {
 	EventService EventService
 }
 
+type TplData struct {
+	Events      []*Event
+	EventGroups map[string][]bool
+	Monitor     bool
+	LastHours   int
+}
+
 //go:embed assets/*
 var assetsFS embed.FS
+
+const monitorHours = 48
 
 var (
 	indexTmpl        *template.Template
@@ -63,12 +72,6 @@ func (s *Server) routes() *http.ServeMux {
 	return mux
 }
 
-type TplData struct {
-	Events      []*Event
-	EventGroups map[string][]*Event
-	Monitor     bool
-}
-
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	events, err := s.EventService.Find("event")
 	if err != nil {
@@ -87,16 +90,53 @@ func (s *Server) handleIndexMonitor(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// group entries by origin to show monitor hooks over time
-	groups := make(map[string][]*Event)
+	eventsGrouped := make(map[string][]*Event)
 	for _, e := range events {
 		identifier := fmt.Sprintf("%s:%s", e.Origin, e.Owner)
-		groups[identifier] = append(groups[identifier], e)
+		eventsGrouped[identifier] = append(eventsGrouped[identifier], e)
 	}
 
+	// calculate hours for each event group
+	eventsGroupedHours := make(map[string][]bool)
+	for k, v := range eventsGrouped {
+		eventsGroupedHours[k] = MonitorMap(time.Now(), v, monitorHours)
+	}
+
+	fmt.Printf("eventsGroupedHours: %v", eventsGroupedHours)
+
 	indexMonitorTmpl.ExecuteTemplate(w, "layout", TplData{
-		EventGroups: groups,
+		EventGroups: eventsGroupedHours,
 		Monitor:     true,
+		LastHours:   monitorHours,
 	})
+}
+
+// MonitorMap groups events by hour in reverse order
+func MonitorMap(now time.Time, events []*Event, lastHours int) []bool {
+
+	// hours represents the last hours and if a
+	// monitoring event occured in this hour
+	hours := make([]bool, lastHours)
+
+	for _, e := range events {
+		diff := int(now.Sub(truncateToHour(e.CreatedAt)).Hours()) + 1
+		if diff > lastHours {
+			continue
+		}
+
+		hours[diff] = true
+	}
+
+	// reverse slice
+	for i, j := 0, len(hours)-1; i < j; i, j = i+1, j-1 {
+		hours[i], hours[j] = hours[j], hours[i]
+	}
+
+	return hours
+}
+
+func truncateToHour(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location())
 }
 
 func (s *Server) handleLog(w http.ResponseWriter, r *http.Request) {

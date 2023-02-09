@@ -14,3 +14,6 @@ tailwind:
 
 tailwind-watch:
 	cd assets && npx tailwindcss -i ./styles.css -o ./output.css --watch
+
+test:
+	go test ./...
