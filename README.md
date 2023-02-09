@@ -6,46 +6,43 @@ events in your network and display them on a web interface.
 
 ![](./screenshots/events-monitors.png)
 
+## Usage
+
+All required resources are embedded in the executable.
+
+```
+git clone github.com/rverton/tevents
+cd tevents && make
+export TS_AUTHKEY=tskey-auth-xyu # can be retrieved via admin panel
+go build -o tevents ./cmd/tevents
+./tevents
+```
+
 ## Events
 An event holds the following fields:
 
 ```
 origin: (unique) identifier of the sender
-type: type of the event (log, monitor)
+type: type of the event (event or monitor-event)
 body: content
-owner: tailnet owner
+owner: tailnet owner who send the event
 ```
 
 There are two different types of events:
 
-#### Log events:
-Log events are simple one-time HTTP requests to to notify of a specific event.
-
-```
-2021-05-01 12:00:00 - networkwatcher - new device found connected to network
-```
-
-#### Monitor events
-Monitor events are events that are sent periodically and allow you to graph execution. This allows for example to watch cron jobs for execution.
-
-```
-2021-06-01 12:00:00 - cron:backup - backup executed
-2021-07-01 12:00:00 - cron:backup - backup executed
-2021-09-01 12:00:00 - cron:backup - backup executed
-```
-
-Monitor events will be plotted by their tags.
+- Log events are simple one-time HTTP requests to to notify of a specific event.
+- Monitor events are events that are sent periodically and allow you to graph execution. This allows for example to watch cron jobs for execution.
 
 ## Submission
 
-Events can be submitted via HTTP.
+Events can be submitted via HTTP POST.
 
 ```
 # example for log event
 curl http://tevents/.log?origin=networkwatcher -d "new device found connected to network"
 
 # example for monitoring a cron job executed every morning
-0 1 * * * /usr/local/bin/backup.sh && curl http://tevents/.monitor?origin=cron:backup
+0 1 * * * /usr/local/bin/backup.sh && curl -X POST http://tevents/.monitor?origin=cron:backup
 ```
 
 ## Development
