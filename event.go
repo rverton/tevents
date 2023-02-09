@@ -14,4 +14,5 @@ type Event struct {
 type EventService interface {
 	Insert(origin, event_type, body, owner string) error
 	Find(event_type string) ([]*Event, error)
+	ClearAll() error
 }

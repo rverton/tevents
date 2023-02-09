@@ -53,11 +53,14 @@
                 <span class="lg:ml-2 text-slate-600">Monitors</span>
               </a>
             </div>
-            <a
-              href="#"
-              class="inline-flex items-center rounded-md border border-transparent bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2"
-              >Clear</a
-            >
+            <form method="post" action="/.clear">
+              <button
+                onclick="return confirm('Are you sure you want to clear all events?')"
+                class="inline-flex items-center rounded-md border border-transparent bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2"
+              >
+                Clear
+              </button>
+            </form>
           </div>
         </nav>
 

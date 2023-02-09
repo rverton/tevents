@@ -64,4 +64,4 @@ make                    # build executable with all assets embedded
 - [ ] Make hour interval configurable
 - [ ] Filter, search and pagination
 - [ ] Allow to remove monitors (and all corresponding events)
-- [ ] Clear functionality
+- [x] Clear functionality

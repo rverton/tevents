@@ -58,3 +58,8 @@ func (es *EventService) Find(event_type string) ([]*tevents.Event, error) {
 	}
 	return events, rows.Err()
 }
+
+func (es *EventService) ClearAll() error {
+	_, err := es.db.Exec(`DELETE FROM events`)
+	return err
+}

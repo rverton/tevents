@@ -74,6 +74,7 @@ func (s *Server) routes() *http.ServeMux {
 	// collect
 	mux.HandleFunc("/.log", s.handleLog)
 	mux.HandleFunc("/.monitor", s.handleMonitor)
+	mux.HandleFunc("/.clear", s.handleClear)
 
 	mux.Handle("/assets/", http.FileServer(http.FS(assetsFS)))
 
@@ -143,10 +144,6 @@ func MonitorMap(now time.Time, events []*Event, lastHours int) []bool {
 	return hours
 }
 
-func truncateToHour(t time.Time) time.Time {
-	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location())
-}
-
 func (s *Server) handleLog(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -195,10 +192,28 @@ func (s *Server) handleMonitor(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *Server) handleClear(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	if err := s.EventService.ClearAll(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
 func (s *Server) Start() error {
 
 	s.server.Handler = s.routes()
 
 	log.Println("Starting server on", s.server.Addr)
 	return s.server.Serve(s.listener)
+}
+
+func truncateToHour(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location())
 }
