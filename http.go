@@ -111,8 +111,6 @@ func (s *Server) handleIndexMonitor(w http.ResponseWriter, r *http.Request) {
 		eventsGroupedHours[k] = MonitorMap(time.Now(), v, monitorHours)
 	}
 
-	fmt.Printf("eventsGroupedHours: %v", eventsGroupedHours)
-
 	indexMonitorTmpl.ExecuteTemplate(w, "layout", TplData{
 		EventGroups: eventsGroupedHours,
 		Monitor:     true,
@@ -128,7 +126,8 @@ func MonitorMap(now time.Time, events []*Event, lastHours int) []bool {
 	hours := make([]bool, lastHours)
 
 	for _, e := range events {
-		diff := int(now.Sub(truncateToHour(e.CreatedAt)).Hours()) + 1
+		diff := int(now.Sub(e.CreatedAt).Minutes() / 60)
+
 		if diff > lastHours {
 			continue
 		}
