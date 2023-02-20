@@ -49,8 +49,8 @@ func init() {
 		},
 	}
 
-	indexTmpl = template.Must(template.New("events").Funcs(funcMap).ParseFS(assetsFS, "assets/layout.html", "assets/events.html"))
-	indexMonitorTmpl = template.Must(template.New("monitors").Funcs(funcMap).ParseFS(assetsFS, "assets/layout.html", "assets/monitors.html"))
+	indexTmpl = parseTpl(funcMap, "assets/events.html")
+	indexMonitorTmpl = parseTpl(funcMap, "assets/monitors.html")
 }
 
 func NewServer(addr string, db *sql.DB, ln net.Listener, lc *tailscale.LocalClient) *Server {
@@ -88,7 +88,7 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	indexTmpl.ExecuteTemplate(w, "layout", TplData{Events: events, Monitor: false})
+	indexTmpl.ExecuteTemplate(w, "layout.html", TplData{Events: events, Monitor: false})
 }
 
 func (s *Server) handleIndexMonitor(w http.ResponseWriter, r *http.Request) {
@@ -111,7 +111,7 @@ func (s *Server) handleIndexMonitor(w http.ResponseWriter, r *http.Request) {
 		eventsGroupedHours[k] = MonitorMap(time.Now(), v, monitorHours)
 	}
 
-	indexMonitorTmpl.ExecuteTemplate(w, "layout", TplData{
+	indexMonitorTmpl.ExecuteTemplate(w, "layout.html", TplData{
 		EventGroups: eventsGroupedHours,
 		Monitor:     true,
 		LastHours:   monitorHours,
@@ -215,4 +215,9 @@ func (s *Server) Start() error {
 
 func truncateToHour(t time.Time) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location())
+}
+
+func parseTpl(funcs template.FuncMap, file string) *template.Template {
+	return template.Must(
+		template.New("layout.html").Funcs(funcs).ParseFS(assetsFS, "assets/layout.html", file))
 }

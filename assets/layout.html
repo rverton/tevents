@@ -1,73 +1,71 @@
-{{ define "layout" }}
-  <!DOCTYPE html>
-  <html>
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <link href="/assets/output.css" rel="stylesheet" />
-    </head>
-    <body class="bg-gray-100">
-      <div class="bg-white rounded-lg shadow m-5 px-4 py-2">
-        <nav class="border-b flex justify-between py-2 items-center">
-          <div class="items-center flex">
-            <h1 class="font-medium">tailnet event collector</h1>
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="/assets/output.css" rel="stylesheet" />
+  </head>
+  <body class="bg-gray-100">
+    <div class="bg-white rounded-lg shadow m-5 px-4 py-2">
+      <nav class="border-b flex justify-between py-2 items-center">
+        <div class="items-center flex">
+          <h1 class="font-medium">tailnet event collector</h1>
 
-            <div class="flex space-x-3 ml-6"></div>
-          </div>
+          <div class="flex space-x-3 ml-6"></div>
+        </div>
 
-          <div class="flex space-x-5 items-center">
-            <div
-              class="flex space-x-1 rounded-lg bg-slate-100 p-0.5"
-              role="tablist"
-              aria-orientation="horizontal"
+        <div class="flex space-x-5 items-center">
+          <div
+            class="flex space-x-1 rounded-lg bg-slate-100 p-0.5"
+            role="tablist"
+            aria-orientation="horizontal"
+          >
+            <a
+              href="/"
+              {{ if not .Monitor }}
+                class="flex items-center rounded-md py-[0.4375rem] pl-2 pr-2
+                text-sm font-semibold lg:pr-3 bg-white shadow"
+              {{ else }}
+                class="flex items-center rounded-md py-[0.4375rem] pl-2 pr-2
+                text-sm font-semibold lg:pr-3"
+              {{ end }}
+              role="tab"
+              type="button"
+              tabindex="0"
             >
-              <a
-                href="/"
-                {{ if not .Monitor }}
-                  class="flex items-center rounded-md py-[0.4375rem] pl-2 pr-2
-                  text-sm font-semibold lg:pr-3 bg-white shadow"
-                {{ else }}
-                  class="flex items-center rounded-md py-[0.4375rem] pl-2 pr-2
-                  text-sm font-semibold lg:pr-3"
-                {{ end }}
-                role="tab"
-                type="button"
-                tabindex="0"
-              >
-                <span class="lg:ml-2 text-slate-900">Events</span></a
-              >
-              <a
-                href="/monitor"
-                {{ if .Monitor }}
-                  class="flex items-center rounded-md py-[0.4375rem] pl-2 pr-2
-                  text-sm font-semibold lg:pr-3 bg-white shadow"
-                {{ else }}
-                  class="flex items-center rounded-md py-[0.4375rem] pl-2 pr-2
-                  text-sm font-semibold lg:pr-3"
-                {{ end }}
-                role="tab"
-                type="button"
-                aria-selected="false"
-                tabindex="-1"
-              >
-                <span class="lg:ml-2 text-slate-600">Monitors</span>
-              </a>
-            </div>
-            <form method="post" action="/.clear">
-              <button
-                onclick="return confirm('Are you sure you want to clear all events?')"
-                class="inline-flex items-center rounded-md border border-transparent bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2"
-              >
-                Clear
-              </button>
-            </form>
+              <span class="lg:ml-2 text-slate-900">Events</span></a
+            >
+            <a
+              href="/monitor"
+              {{ if .Monitor }}
+                class="flex items-center rounded-md py-[0.4375rem] pl-2 pr-2
+                text-sm font-semibold lg:pr-3 bg-white shadow"
+              {{ else }}
+                class="flex items-center rounded-md py-[0.4375rem] pl-2 pr-2
+                text-sm font-semibold lg:pr-3"
+              {{ end }}
+              role="tab"
+              type="button"
+              aria-selected="false"
+              tabindex="-1"
+            >
+              <span class="lg:ml-2 text-slate-600">Monitors</span>
+            </a>
           </div>
-        </nav>
+          <form method="post" action="/.clear">
+            <button
+              onclick="return confirm('Are you sure you want to clear all events?')"
+              class="inline-flex items-center rounded-md border border-transparent bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2"
+            >
+              Clear
+            </button>
+          </form>
+        </div>
+      </nav>
 
-        <main class="">
-          {{ block "main" . }}{{ end }}
-        </main>
-      </div>
-    </body>
-  </html>
-{{ end }}
+      <main class="">
+        {{ block "main" . }}{{ end }}
+      </main>
+    </div>
+  </body>
+</html>
