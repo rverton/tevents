@@ -1,5 +1,5 @@
 {{ define "main" }}
-      <div hx-sse="connect:/.sse" Pclass="flex flex-col mt-1 font-mono text-sm">
+      <div hx-sse="connect:/.sse" class="flex flex-col mt-1 font-mono text-sm">
         <div hx-sse="swap:message" hx-swap="afterbegin"></div>
 
         {{ range .Events }}
