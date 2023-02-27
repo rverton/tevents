@@ -1,0 +1,11 @@
+<div
+  class="flex flex-col sm:flex-row px-2 space-x-0 sm:space-x-5 border-b border-gray-100 py-1 font-mono font-extralight"
+>
+  <div class="flex items-center text-gray-400">
+    {{ formatTime .CreatedAt }}
+  </div>
+
+  <div class="text-gray-500">{{ .Origin }}:{{ .Owner }}</div>
+
+  <div class="text-gray-600">{{ .Body }}</div>
+</div>

@@ -1,6 +1,7 @@
 package tevents
 
 import (
+	"bytes"
 	"database/sql"
 	"embed"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"tailscale.com/client/tailscale"
@@ -23,6 +25,7 @@ type Server struct {
 	tsClient *tailscale.LocalClient
 
 	EventService EventService
+	Notifier     *Notifier
 }
 
 type TplData struct {
@@ -40,6 +43,7 @@ const monitorHours = 48
 var (
 	indexTmpl        *template.Template
 	indexMonitorTmpl *template.Template
+	rowTmpl          *template.Template
 )
 
 func init() {
@@ -51,6 +55,10 @@ func init() {
 
 	indexTmpl = parseTpl(funcMap, "assets/events.html")
 	indexMonitorTmpl = parseTpl(funcMap, "assets/monitors.html")
+
+	// special handling for partial template
+	rowTmpl = template.Must(
+		template.New("row.html").Funcs(funcMap).ParseFS(assetsFS, "assets/row.html"))
 }
 
 func NewServer(addr string, db *sql.DB, ln net.Listener, lc *tailscale.LocalClient) *Server {
@@ -61,6 +69,7 @@ func NewServer(addr string, db *sql.DB, ln net.Listener, lc *tailscale.LocalClie
 		db:       db,
 		listener: ln,
 		tsClient: lc,
+		Notifier: NewNotifier(),
 	}
 }
 
@@ -75,6 +84,7 @@ func (s *Server) routes() *http.ServeMux {
 	mux.HandleFunc("/.log", s.handleLog)
 	mux.HandleFunc("/.monitor", s.handleMonitor)
 	mux.HandleFunc("/.clear", s.handleClear)
+	mux.HandleFunc("/.sse", s.handleLiveUpdates)
 
 	mux.Handle("/assets/", http.FileServer(http.FS(assetsFS)))
 
@@ -169,6 +179,14 @@ func (s *Server) handleLog(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("sqlite error: %v", err), http.StatusInternalServerError)
 		return
 	}
+
+	s.Notifier.Send(Event{
+		Origin:    origin,
+		EventType: "event",
+		Body:      string(body),
+		Owner:     owner,
+		CreatedAt: time.Now().UTC(),
+	})
 }
 
 func (s *Server) handleMonitor(w http.ResponseWriter, r *http.Request) {
@@ -205,6 +223,48 @@ func (s *Server) handleClear(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
+func (s *Server) handleLiveUpdates(w http.ResponseWriter, r *http.Request) {
+	handler := s.handleSSE()
+	handler(w, r)
+}
+
+func (s *Server) handleSSE() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Connection", "keep-alive")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+
+		flusher, _ := w.(http.Flusher)
+
+		ticker := time.NewTicker(5 * time.Second)
+		defer ticker.Stop()
+
+		notifyClient := s.Notifier.AddListener()
+		defer s.Notifier.RemoveListener(notifyClient)
+
+		for {
+			select {
+			case event := <-notifyClient.c:
+
+				// print in the format 'data:<html>' and remove newslines
+				var b bytes.Buffer
+				fmt.Fprintf(w, "data:")
+				rowTmpl.Execute(&b, event)
+				fmt.Fprintf(w, "%s\n\n", strings.ReplaceAll(b.String(), "\n", ""))
+				flusher.Flush()
+			case <-ticker.C:
+				fmt.Fprintf(w, "keepalive: \n\n")
+				flusher.Flush()
+			case <-r.Context().Done():
+				return
+
+			}
+		}
+
+	}
+}
+
 func (s *Server) Start() error {
 
 	s.server.Handler = s.routes()
@@ -219,5 +279,10 @@ func truncateToHour(t time.Time) time.Time {
 
 func parseTpl(funcs template.FuncMap, file string) *template.Template {
 	return template.Must(
-		template.New("layout.html").Funcs(funcs).ParseFS(assetsFS, "assets/layout.html", file))
+		template.New("layout.html").Funcs(funcs).ParseFS(
+			assetsFS,
+			"assets/layout.html",
+			"assets/row.html",
+			file,
+		))
 }

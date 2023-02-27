@@ -1,17 +1,9 @@
 {{ define "main" }}
-      <div class="flex flex-col mt-1 font-mono text-sm">
+      <div hx-sse="connect:/.sse" Pclass="flex flex-col mt-1 font-mono text-sm">
+        <div hx-sse="swap:message" hx-swap="afterbegin"></div>
+
         {{ range .Events }}
-          <div
-            class="flex flex-col sm:flex-row px-2 space-x-0 sm:space-x-5 border-b border-gray-100 py-1"
-          >
-            <div class="flex items-center text-gray-400 font-light">
-              {{ formatTime .CreatedAt }}
-            </div>
-
-            <div class="text-gray-500">{{ .Origin }}:{{ .Owner }}</div>
-
-            <div class="text-gray-600">{{ .Body }}</div>
-          </div>
+            {{template "row.html" . }}
         {{ else }}
           <div class="py-2">There are currently no events in your database.</div>
         {{ end }}
