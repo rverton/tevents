@@ -138,7 +138,7 @@ func MonitorMap(now time.Time, events []*Event, lastHours int) []bool {
 	for _, e := range events {
 		diff := int(now.Sub(e.CreatedAt).Minutes() / 60)
 
-		if diff > lastHours {
+		if diff >= lastHours {
 			continue
 		}
 
